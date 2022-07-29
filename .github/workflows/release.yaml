@@ -1,0 +1,46 @@
+name: build release, release image to DockerHub
+
+on:
+  release:
+    types:
+      - published
+    
+jobs:
+  release:
+    name: publish keink binary to github and kubeedge/node image to dockerhub
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Install keink
+        run: sudo make keink && cp bin/keink /usr/local/bin/keink
+
+      - name: Prerequisites
+        # put KubeEdge codes to $GOPATH/github.com/kubeedge/kubeedge with the right branch
+        run: |
+          export GOPATH=$(go env GOPATH)
+          mkdir -p $GOPATH/github.com/kubeedge
+          git clone -b v1.13.0 https://github.com/kubeedge/kubeedge.git $GOPATH/github.com/kubeedge/kubeedge
+
+      - name: Build kubeedge/node image
+        run: |
+          export GOPATH=$(go env GOPATH)
+          /usr/local/bin/keink build edge-image --image=kubeedge/node:${{ github.ref_name }} --kube-root=$GOPATH/github.com/kubeedge/kubeedge
+
+      - name: Uploading release assets...
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            /usr/local/bin/keink
+
+      - name: login to dockerhub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USER_NAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        
+      - name: publish images
+        run: |
+          docker push kubeedge/node:${{ github.ref_name }}

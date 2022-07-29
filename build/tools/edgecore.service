@@ -1,0 +1,12 @@
+[Unit]
+Description=edgecore.service
+
+[Service]
+Environment=CHECK_EDGECORE_ENVIRONMENT='false'
+Type=simple
+ExecStart=/usr/local/bin/edgecore
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

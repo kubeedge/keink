@@ -1,0 +1,88 @@
+name: e2e test
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+    
+jobs:
+  end-to-end-testing:
+    name: end to end testing
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Install keink
+        run: sudo make keink && cp bin/keink /usr/local/bin/keink
+
+      - name: Prerequisites
+        # put KubeEdge codes to $GOPATH/github.com/kubeedge/kubeedge with the right branch
+        run: |
+          export GOPATH=$(go env GOPATH)
+          mkdir -p $GOPATH/github.com/kubeedge
+          git clone -b v1.13.0 https://github.com/kubeedge/kubeedge.git $GOPATH/github.com/kubeedge/kubeedge
+
+      - name: Build kubeedge/node image
+        run: |
+          export GOPATH=$(go env GOPATH)
+          /usr/local/bin/keink build edge-image --kube-root=$GOPATH/github.com/kubeedge/kubeedge
+
+      - name: Install kubectl
+        run: |
+          curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.23.15/bin/linux/amd64/kubectl
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
+
+      - name: Enable ipv4 and ipv6 forwarding
+        run: |
+          sudo sysctl -w net.ipv6.conf.all.forwarding=1
+          sudo sysctl -w net.ipv4.ip_forward=1
+
+      - name: Create single node cluster and kubeedge cluster 
+        run: |
+          /usr/local/bin/keink create kubeedge --image kubeedge/node:latest --wait 120s
+
+      - name: Get Cluster status
+        run: |
+          # wait network is ready
+          kubectl wait --for=condition=ready pods --namespace=kube-system -l k8s-app=kube-dns
+          kubectl get nodes -o wide
+          kubectl get pods -A
+          # wait for master node Ready
+          kubectl wait --for=condition=Ready node/kind-control-plane --timeout=120s
+          # wait for edge-node Ready
+          # edge-node name is also kind-worker
+          kubectl wait --for=condition=Ready node/kind-worker --timeout=180s
+          kubectl get node -owide
+
+      - name: Load docker image
+        run: |
+          docker pull nginx:1.14.2
+          /usr/local/bin/keink load docker-image nginx:1.14.2
+
+      - name: Deploy a demo application to edge-node
+        run: |
+          kubectl apply -f pod.yaml
+          kubectl wait --for=condition=ready pod nginx --timeout 100s
+          kubectl get pod -owide
+
+      - name: Export logs
+        if: always()
+        run: |
+          mkdir -p /tmp/keink/logs
+          /usr/local/bin/keink export logs /tmp/keink/logs
+          sudo chown -R $USER:$USER /tmp/keink/logs
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: keink-logs
+          path: /tmp/keink/logs
+
+      - name: Delete cluster
+        run: /usr/local/bin/keink delete cluster

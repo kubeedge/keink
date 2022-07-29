@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  nodeSelector:
+    "node-role.kubernetes.io/edge": ""
+  containers:
+    - name: nginx
+      image: nginx:1.14.2
