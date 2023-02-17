@@ -2,7 +2,9 @@
 
 keink(represent for [KubeEdge](https://github.com/kubeedge/kubeedge) IN [kind](https://github.com/kubernetes-sigs/kind)) is a tool for running local KubeEdge clusters using Docker container "nodes".
 
-**Notice**: this project is developed based on [kind](https://github.com/kubernetes-sigs/kind).
+**Notice**: 
+- The keink project is currently in alpha state, functionalities may subject to change. Please feel free to share your thoughts and contribute.
+- This project is developed based on [kind](https://github.com/kubernetes-sigs/kind).
 
 ## Integrate with [KubeEdge](https://github.com/kubeedge/kubeedge)
 
