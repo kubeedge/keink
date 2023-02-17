@@ -4,15 +4,15 @@ keink(represent for [KubeEdge](https://github.com/kubeedge/kubeedge) IN [kind](h
 
 **Notice**: this project is developed based on [kind](https://github.com/kubernetes-sigs/kind).
 
-# Integrate with [KubeEdge](https://github.com/kubeedge/kubeedge)
+## Integrate with [KubeEdge](https://github.com/kubeedge/kubeedge)
 
-## Prerequisites
+### Prerequisites
 We need to put KubeEdge codes to `$GOPATH/github.com/kubeedge/kubeedge`.
 And we need to ensure them checkout to the right release branch. For example, we can run the command like `git checkout v1.11.1` to checkout the right release branch.
 
 When running `bin/keink build edge-image` command to build `kubeedge/node` image, which contains KubeEdge components `cloudcore`, `edgecore` and `keadm` based on the [`kindest/node`](https://hub.docker.com/r/kindest/node) image, keink will use the above KubeEdge source codes.
 
-## Build KubeEdge customized node image and start KubeEdge cluster
+### Build KubeEdge customized node image and start KubeEdge cluster
 
 Build keink from source code, build kubeedge/node image, and create cluster.
 ```shell
@@ -63,3 +63,15 @@ nginx   1/1     Running   0          30s   10.244.1.2   kind-worker   <none>    
 ```
 
 And nginx pod will be successfully running on the edge node. Congratulations, KubeEdge cluster is running successfully using `keink`!
+
+
+## Contributing
+
+If you're interested in being a contributor and want to get involved in
+developing the KubeEdge code, please see [CONTRIBUTING](./CONTRIBUTING.md) for
+details on submitting patches and the contribution workflow.
+
+
+## License
+
+keink is under the Apache 2.0 license. See the [LICENSE](license) file for details.
