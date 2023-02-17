@@ -1,0 +1,35 @@
+run:
+  timeout: 2m
+
+linters:
+  disable-all: true
+  enable:
+    # # default golangci-lint lints
+    - deadcode
+    - errcheck
+    - gosimple
+    # - govet
+    - ineffassign
+    # - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+
+    # additional lints
+    - gochecknoinits
+    - gofmt
+    - golint
+    - misspell
+    - scopelint
+    #- unparam
+    - goimports
+    - gci
+
+linters-settings:
+  gci:
+    local-prefixes: github.com/kubeedge/keink
+
+issues:
+    # Maximum count of issues with the same text. Set to 0 to disable. Default is 3.
+    max-same-issues: 0
