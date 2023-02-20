@@ -25,4 +25,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace sigs.k8s.io/kind => github.com/gy95/kind v0.12.0-kubeedge1
+replace sigs.k8s.io/kind => github.com/kubeedge/kind v0.12.0-kubeedge1
