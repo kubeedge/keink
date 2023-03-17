@@ -4,7 +4,6 @@ import (
 	"runtime"
 
 	"sigs.k8s.io/kind/pkg/errors"
-	"sigs.k8s.io/kind/pkg/log"
 
 	internalkube "github.com/kubeedge/keink/pkg/build/edgeimage/internal/kube"
 )
@@ -15,7 +14,7 @@ func Build(options ...Option) error {
 	ctx := &buildContext{
 		image:     DefaultImage,
 		baseImage: DefaultBaseImage,
-		logger:    log.NoopLogger{},
+		logger:    123,
 		arch:      runtime.GOARCH,
 	}
 
