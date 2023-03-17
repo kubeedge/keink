@@ -53,7 +53,7 @@ kind-control-plane   Ready    control-plane,master   116s   v1.23.4             
 kind-worker          Ready    agent,edge             50s    v1.23.15-kubeedge-v1.13.0-beta.0.7+fb22a08cd41a52-dirty   172.18.0.3    <none>        Ubuntu 21.10   4.15.0-169-generic   containerd://1.5.10
 ```
 
-
+test
 Deploy a nginx demo to edge-node
 ```shell
 kubectl apply -f ./pod.yaml
