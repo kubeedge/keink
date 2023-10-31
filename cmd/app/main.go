@@ -26,12 +26,12 @@ func Main() {
 func Run(logger log.Logger, streams kindcmd.IOStreams, args []string) error {
 	// NOTE: we handle the quiet flag here so we can fully silence cobra
 	if checkQuiet(args) {
-		// if we are in quiet mode, we want to suppress all status output
-		// only streams.Out should be written to (program output)
+		// If we are in quiet mode, we want to suppress all status output
+		// Only streams.Out should be written to (program output)
 		logger = log.NoopLogger{}
 		streams.ErrOut = ioutil.Discard
 	}
-	// actually run the command
+	// Actually run the command
 	c := cmd.NewCommand(logger, streams)
 	c.SetArgs(args)
 	if err := c.Execute(); err != nil {
@@ -61,7 +61,7 @@ func checkQuiet(args []string) bool {
 	return quiet
 }
 
-// logError logs the error and the root stacktrace if there is one
+// logError logs the error and the root stack trace if there is one
 func logError(logger log.Logger, err error) {
 	colorEnabled := kindcmd.ColorEnabled(logger)
 	if colorEnabled {
@@ -69,17 +69,17 @@ func logError(logger log.Logger, err error) {
 	} else {
 		logger.Errorf("ERROR: %v", err)
 	}
-	// Display Output if the error was from running a command ...
-	if err := exec.RunErrorForError(err); err != nil {
+	// Display output if the error was from running a command ...
+	if execErr := exec.RunErrorForError(err); execErr != nil {
 		if colorEnabled {
-			logger.Errorf("\x1b[31mCommand Output\x1b[0m: %s", err.Output)
+			logger.Errorf("\x1b[31mCommand Output\x1b[0m: %s", execErr.Output)
 		} else {
-			logger.Errorf("\nCommand Output: %s", err.Output)
+			logger.Errorf("\nCommand Output: %s", execErr.Output)
 		}
 	}
-	// TODO: stacktrace should probably be guarded by a higher level ...?
+	// TODO: Stack trace should probably be guarded by a higher level ...?
 	if logger.V(1).Enabled() {
-		// Then display stack trace if any (there should be one...)
+		// Then display the stack trace if any (there should be one...)
 		if trace := errors.StackTrace(err); trace != nil {
 			if colorEnabled {
 				logger.Errorf("\x1b[31mStack Trace\x1b[0m: %+v", trace)
