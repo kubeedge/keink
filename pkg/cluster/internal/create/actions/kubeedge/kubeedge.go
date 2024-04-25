@@ -200,8 +200,8 @@ func (a *Action) startCloudcore(ctx *actions.ActionContext, node nodes.Node) err
 
 	// create CRDs
 	crds := []string{
-		"devices_v1alpha2_device.yaml",
-		"devices_v1alpha2_devicemodel.yaml",
+		"devices_v1beta1_device.yaml",
+		"devices_v1beta1_devicemodel.yaml",
 		"cluster_objectsync_v1alpha1.yaml",
 		"objectsync_v1alpha1.yaml",
 		"router_v1_rule.yaml",
