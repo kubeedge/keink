@@ -113,8 +113,8 @@ func (b *dockerBuilder) Build() (kube.Bits, error) {
 			filepath.Join(filepath.Join(binDir, "edgecore")),
 
 			// CRDs required by KubeEdge
-			filepath.Join(crdDir, "devices", "devices_v1alpha2_device.yaml"),
-			filepath.Join(crdDir, "devices", "devices_v1alpha2_devicemodel.yaml"),
+			filepath.Join(crdDir, "devices", "devices_v1beta1_device.yaml"),
+			filepath.Join(crdDir, "devices", "devices_v1beta1_devicemodel.yaml"),
 			filepath.Join(crdDir, "reliablesyncs", "cluster_objectsync_v1alpha1.yaml"),
 			filepath.Join(crdDir, "reliablesyncs", "objectsync_v1alpha1.yaml"),
 			filepath.Join(crdDir, "router", "router_v1_rule.yaml"),

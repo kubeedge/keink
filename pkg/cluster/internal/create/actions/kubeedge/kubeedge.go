@@ -177,7 +177,7 @@ func (a *Action) startCloudcoreWithKeadm(ctx *actions.ActionContext, node nodes.
 	// cloudcore svc use NodePort type, to enable edgecore connect to cloudcore, we may add the below routes on the host
 	//iptables -t nat -A PREROUTING -d ${advertise-address} -p tcp --dport 10000 -j DNAT --to-destination ${NODE_IP}:30000
 	//iptables -t nat -A PREROUTING -d ${advertise-address} -p tcp --dport 10002 -j DNAT --to-destination ${NODE_IP}:30002
-	startCmd := fmt.Sprintf("keadm init --advertise-address=%s --profile version=v1.12.0 --kube-config /etc/kubernetes/admin.conf --set cloudCore.hostNetWork=false", a.AdvertiseAddress)
+	startCmd := fmt.Sprintf("keadm init --advertise-address=%s --profile version=v1.17.0 --kube-config /etc/kubernetes/admin.conf --set cloudCore.hostNetWork=false", a.AdvertiseAddress)
 	cmd := node.Command("bash", "-c", startCmd)
 	lines, err := exec.CombinedOutputLines(cmd)
 	ctx.Logger.V(3).Info(strings.Join(lines, "\n"))
@@ -200,8 +200,8 @@ func (a *Action) startCloudcore(ctx *actions.ActionContext, node nodes.Node) err
 
 	// create CRDs
 	crds := []string{
-		"devices_v1alpha2_device.yaml",
-		"devices_v1alpha2_devicemodel.yaml",
+		"devices_v1beta1_device.yaml",
+		"devices_v1beta1_devicemodel.yaml",
 		"cluster_objectsync_v1alpha1.yaml",
 		"objectsync_v1alpha1.yaml",
 		"router_v1_rule.yaml",
