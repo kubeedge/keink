@@ -25,7 +25,7 @@ jobs:
         run: |
           export GOPATH=$(go env GOPATH)
           mkdir -p $GOPATH/github.com/kubeedge
-          git clone -b v1.13.0 https://github.com/kubeedge/kubeedge.git $GOPATH/github.com/kubeedge/kubeedge
+          git clone -b v1.17.0 https://github.com/kubeedge/kubeedge.git $GOPATH/github.com/kubeedge/kubeedge
 
       - name: Build kubeedge/node image
         run: |
