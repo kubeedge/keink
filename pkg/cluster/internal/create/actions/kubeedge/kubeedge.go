@@ -177,7 +177,7 @@ func (a *Action) startCloudcoreWithKeadm(ctx *actions.ActionContext, node nodes.
 	// cloudcore svc use NodePort type, to enable edgecore connect to cloudcore, we may add the below routes on the host
 	//iptables -t nat -A PREROUTING -d ${advertise-address} -p tcp --dport 10000 -j DNAT --to-destination ${NODE_IP}:30000
 	//iptables -t nat -A PREROUTING -d ${advertise-address} -p tcp --dport 10002 -j DNAT --to-destination ${NODE_IP}:30002
-	startCmd := fmt.Sprintf("keadm init --advertise-address=%s --profile version=v1.17.0 --kube-config /etc/kubernetes/admin.conf --set cloudCore.hostNetWork=false", a.AdvertiseAddress)
+	startCmd := fmt.Sprintf("keadm init --advertise-address=%s --profile version=v1.12.0 --kube-config /etc/kubernetes/admin.conf --set cloudCore.hostNetWork=false", a.AdvertiseAddress)
 	cmd := node.Command("bash", "-c", startCmd)
 	lines, err := exec.CombinedOutputLines(cmd)
 	ctx.Logger.V(3).Info(strings.Join(lines, "\n"))
@@ -326,31 +326,32 @@ func (a *Action) runStartEdgecore(ctx *actions.ActionContext, node nodes.Node) e
 		return fmt.Errorf("failed to generate cloudcore config: %v", err)
 	}
 
-	cmd = node.Command("bash", "-c", fmt.Sprintf(`sed -i -e "s|token: .*|token: %s|g" /etc/kubeedge/config/edgecore.yaml`, KubeEdgeToken))
+	cmd = node.Command("bash", "-c", fmt.Sprintf(`sed -i -e "/metaServer:/{n;n;s/false/true/;}" /etc/kubeedge/config/edgecore.yaml`))
 	lines, err = exec.CombinedOutputLines(cmd)
 	ctx.Logger.V(3).Info(strings.Join(lines, "\n"))
 	if err != nil {
-		return fmt.Errorf("failed to modify token: %v", err)
+		return fmt.Errorf("failed to modify metaServer: %v", err)
 	}
 
-	// modify runtime to containerd
-	cmd = node.Command("bash", "-c", fmt.Sprintf(`sed -i -e "s|remoteImageEndpoint: .*|remoteImageEndpoint: %s|g" /etc/kubeedge/config/edgecore.yaml`, "unix:///var/run/containerd/containerd.sock"))
+	cmd = node.Command("bash", "-c", fmt.Sprintf(`sed -i -e "s|cgroupDriver: .*|cgroupDriver: systemd|g" /etc/kubeedge/config/edgecore.yaml`))
 	lines, err = exec.CombinedOutputLines(cmd)
 	ctx.Logger.V(3).Info(strings.Join(lines, "\n"))
 	if err != nil {
-		return fmt.Errorf("failed to modify remoteImageEndpoint: %v", err)
+		return fmt.Errorf("failed to modify cgroupDriver: %v", err)
 	}
-	cmd = node.Command("bash", "-c", fmt.Sprintf(`sed -i -e "s|remoteRuntimeEndpoint: .*|remoteRuntimeEndpoint: %s|g" /etc/kubeedge/config/edgecore.yaml`, "unix:///var/run/containerd/containerd.sock"))
+
+	cmd = node.Command("bash", "-c", fmt.Sprintf(`sed -i -e "s|imageServiceEndpoint: .*|imageServiceEndpoint: %s|g" /etc/kubeedge/config/edgecore.yaml`, "unix:///var/run/containerd/containerd.sock"))
 	lines, err = exec.CombinedOutputLines(cmd)
 	ctx.Logger.V(3).Info(strings.Join(lines, "\n"))
 	if err != nil {
-		return fmt.Errorf("failed to modify remoteRuntimeEndpoint: %v", err)
+		return fmt.Errorf("failed to modify imageServiceEndpoint to remote: %v", err)
 	}
-	cmd = node.Command("bash", "-c", fmt.Sprintf(`sed -i -e "s|containerRuntime: .*|containerRuntime: %s|g" /etc/kubeedge/config/edgecore.yaml`, "remote"))
+
+	cmd = node.Command("bash", "-c", fmt.Sprintf(`sed -i -e "s|containerRuntimeEndpoint: .*|containerRuntimeEndpoint: %s|g" /etc/kubeedge/config/edgecore.yaml`, "unix:///var/run/containerd/containerd.sock"))
 	lines, err = exec.CombinedOutputLines(cmd)
 	ctx.Logger.V(3).Info(strings.Join(lines, "\n"))
 	if err != nil {
-		return fmt.Errorf("failed to modify containerRuntime to remote: %v", err)
+		return fmt.Errorf("failed to modify containerRuntimeEndpoint to remote: %v", err)
 	}
 
 	// modify edgeHub.httpServer websocker.server ip cloudcore ip or control-plane ip
@@ -381,6 +382,12 @@ func (a *Action) runStartEdgecore(ctx *actions.ActionContext, node nodes.Node) e
 		return fmt.Errorf("failed to modify resolv: %v", err)
 	}
 
+	cmd = node.Command("bash", "-c", fmt.Sprintf(`sed -i -e "s|token: .*|token: %s|g" /etc/kubeedge/config/edgecore.yaml`, KubeEdgeToken))
+	lines, err = exec.CombinedOutputLines(cmd)
+	ctx.Logger.V(3).Info(strings.Join(lines, "\n"))
+	if err != nil {
+		return fmt.Errorf("failed to modify token: %v", err)
+	}
 	cmd = node.Command("bash", "-c", "systemctl daemon-reload && systemctl enable edgecore && systemctl start edgecore")
 	lines, err = exec.CombinedOutputLines(cmd)
 	ctx.Logger.V(3).Info(strings.Join(lines, "\n"))
@@ -408,7 +415,7 @@ func (a *Action) runStartEdgecoreWithKeadm(ctx *actions.ActionContext, node node
 	// not start MQTT conainer, error: E0728 01:07:37.717267    1429 remote_runtime.go:116] "RunPodSandbox from runtime service failed" err="rpc error: code = Unknown
 	// desc = failed to reserve sandbox name \"mqtt___0\": name \"mqtt___0\" is reserved for \"264c9ad4f0be7271711a21b0c89f958da582e1869a3b18fb07dd719b16989595\""
 	// TODO: debug why edgecore segmentfault with nothing
-	joinCmd := fmt.Sprintf("keadm join --cloudcore-ipport %s --certport 30002 --token %s --remote-runtime-endpoint unix:///var/run/containerd/containerd.sock --runtimetype remote --with-mqtt=false", controlPlaneIP+":30000", KubeEdgeToken)
+	joinCmd := fmt.Sprintf("keadm join --cgroupdriver=systemd --cloudcore-ipport=%s --token=%s --remote-runtime-endpoint=unix:///var/run/containerd/containerd.sock", controlPlaneIP+":10000", KubeEdgeToken)
 	cmd = node.Command("bash", "-c", joinCmd)
 	lines, err = exec.CombinedOutputLines(cmd)
 	ctx.Logger.V(3).Info(strings.Join(lines, "\n"))

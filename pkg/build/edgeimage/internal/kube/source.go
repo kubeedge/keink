@@ -31,6 +31,7 @@ import (
 // this is used by FindSource
 const ImportPath = "kubeedge"
 
+// FindSource attempts to locate a KubeEdge checkout using go's build package
 func FindSource() (root string, err error) {
 	// look up the source the way go build would
 	pkg, err := build.Default.Import(ImportPath, build.Default.GOPATH, build.FindOnly|build.IgnoreVendor)
@@ -44,6 +45,8 @@ func FindSource() (root string, err error) {
 	return "", errors.New("could not find kubeedge source")
 }
 
+// maybeKubeDir returns true if the dir looks plausibly like a kubernetes
+// source directory
 func maybeKubeDir(dir string) bool {
 	// TODO(bentheelder): consider adding other sanity checks
 	// check if 'go.mod' exists in the directory
@@ -60,18 +63,19 @@ func findOrCloneKubeEdge(importPath string) (string, error) {
 		return filepath.Dir(pkg[0].GoFiles[0]), nil
 	}
 
+	branch := "release-1.17"
 	localDir := filepath.Join(build.Default.GOPATH, "src", importPath)
 	fmt.Println("Cloning KubeEdge from GitHub to", localDir)
 
-	if err := gitClone("https://github.com/kubeedge/kubeedge.git", localDir); err != nil {
+	if err := gitClone("https://github.com/kubeedge/kubeedge.git", branch, localDir); err != nil {
 		return "", err
 	}
 
 	return localDir, nil
 }
 
-func gitClone(repoURL, localDir string) error {
-	cmd := exec.Command("git", "clone", repoURL, localDir)
+func gitClone(repoURL, branch, localDir string) error {
+	cmd := exec.Command("git", "clone", "--branch", branch, repoURL, localDir)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to clone KubeEdge repository: %w", err)
 	}
