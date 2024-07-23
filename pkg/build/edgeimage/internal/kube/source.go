@@ -17,14 +17,19 @@ limitations under the License.
 package kube
 
 import (
+	"fmt"
 	"go/build"
+	"os"
+	"path/filepath"
 
+	"golang.org/x/tools/go/packages"
 	"sigs.k8s.io/kind/pkg/errors"
+	"sigs.k8s.io/kind/pkg/exec"
 )
 
 // ImportPath is the canonical import path for the KubeEdge root package
 // this is used by FindSource
-const ImportPath = "github.com/kubeedge/kubeedge"
+const ImportPath = "kubeedge"
 
 // FindSource attempts to locate a KubeEdge checkout using go's build package
 func FindSource() (root string, err error) {
@@ -33,6 +38,10 @@ func FindSource() (root string, err error) {
 	if err == nil && maybeKubeDir(pkg.Dir) {
 		return pkg.Dir, nil
 	}
+	path, err := findOrCloneKubeEdge(ImportPath)
+	if err == nil && path != "" {
+		return path, nil
+	}
 	return "", errors.New("could not find kubeedge source")
 }
 
@@ -40,5 +49,35 @@ func FindSource() (root string, err error) {
 // source directory
 func maybeKubeDir(dir string) bool {
 	// TODO(bentheelder): consider adding other sanity checks
-	return dir != ""
+	// check if 'go.mod' exists in the directory
+	goModPath := dir + "/go.mod"
+	if _, err := os.Stat(goModPath); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func findOrCloneKubeEdge(importPath string) (string, error) {
+	pkg, err := packages.Load(&packages.Config{Mode: packages.NeedFiles}, importPath)
+	if err == nil && len(pkg) > 0 && pkg[0].GoFiles != nil {
+		return filepath.Dir(pkg[0].GoFiles[0]), nil
+	}
+
+	branch := "release-1.17"
+	localDir := filepath.Join(build.Default.GOPATH, "src", importPath)
+	fmt.Println("Cloning KubeEdge from GitHub to", localDir)
+
+	if err := gitClone("https://github.com/kubeedge/kubeedge.git", branch, localDir); err != nil {
+		return "", err
+	}
+
+	return localDir, nil
+}
+
+func gitClone(repoURL, branch, localDir string) error {
+	cmd := exec.Command("git", "clone", "--branch", branch, repoURL, localDir)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to clone KubeEdge repository: %w", err)
+	}
+	return nil
 }
