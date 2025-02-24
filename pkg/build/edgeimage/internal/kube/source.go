@@ -17,8 +17,10 @@ limitations under the License.
 package kube
 
 import (
+	"encoding/json"
 	"fmt"
 	"go/build"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -63,7 +65,11 @@ func findOrCloneKubeEdge(importPath string) (string, error) {
 		return filepath.Dir(pkg[0].GoFiles[0]), nil
 	}
 
-	branch := "release-1.17"
+	branch, err := fetchLatestKubeEdgeVersion()
+	if err != nil || branch == "" {
+		return "", err
+	}
+
 	localDir := filepath.Join(build.Default.GOPATH, "src", importPath)
 	fmt.Println("Cloning KubeEdge from GitHub to", localDir)
 
@@ -80,4 +86,24 @@ func gitClone(repoURL, branch, localDir string) error {
 		return fmt.Errorf("failed to clone KubeEdge repository: %w", err)
 	}
 	return nil
+}
+
+func fetchLatestKubeEdgeVersion() (string, error) {
+	resp, err := http.Get("https://api.github.com/repos/kubeedge/kubeedge/releases/latest")
+	if err != nil {
+		return "", err
+	} else if resp.StatusCode != http.StatusOK {
+		return "", nil
+	}
+
+	defer resp.Body.Close()
+
+	var data struct {
+		TagName string `json:"tag_name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return "", err
+	}
+
+	return data.TagName, nil
 }
