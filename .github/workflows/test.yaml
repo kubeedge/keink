@@ -11,7 +11,7 @@ on:
 jobs:
   end-to-end-testing:
     name: end to end testing with configure file
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - name: Check out code into the Go module directory
